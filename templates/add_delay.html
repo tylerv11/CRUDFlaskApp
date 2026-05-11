@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Add Delay</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.35; padding: 24px; }
+    label { font-weight: 600; margin-right: 8px; }
+    input[type="text"], textarea, select { padding: 6px 8px; }
+    .row { margin: 6px 0 10px; }
+    .inline-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+    .inline-row input[type="text"] { flex: 1; }
+    /* highlight readonly fields */
+    input[readonly] { background-color: #eee; color: #555; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h1>Add Delay</h1>
+
+  <form method="post" id="add_delay" action="{{ url_for('add_delay') }}">
+
+    <!-- Read-only identifiers (visually greyed out, tighter spacing) -->
+    <div class="inline-row">
+      <label for="batchid">batchid:</label>
+      <input type="text" id="batchid" name="batchid" value="{{ data.batchid }}" readonly required>
+    </div>
+
+    <div class="inline-row">
+      <label for="wo_number">wo_number:</label>
+      <input type="text" id="wo_number" name="wo_number" value="{{ data.wo_number }}" readonly required>
+    </div>
+
+    <div class="inline-row">
+      <label for="bin_sequence">bin_sequence:</label>
+      <input type="text" id="bin_sequence" name="bin_sequence" value="{{ data.bin_sequence }}" readonly required>
+    </div>
+
+    <div class="inline-row">
+      <label for="bin_start">bin_start:</label>
+      <input type="text" id="bin_start" name="bin_start" value="{{ data.bin_start }}" readonly required>
+    </div>
+
+    <div class="inline-row">
+      <label for="processing_minutes">Duration:</label>
+      <input type="text" id="processing_minutes" name="processing_minutes" value="{{ data.processing_minutes }}" readonly required>
+    </div>
+
+    <div class="inline-row">
+      <label for="operator">operator:</label>
+      <input type="text" id="operator" name="operator" value="{{ data.operator }}" readonly required>
+    </div>
+
+    <div class="inline-row">
+      <label for="sample_lot">sample_lot:</label>
+      <input type="text" id="sample_lot" name="sample_lot" value="{{ data.sample_lot }}" readonly required>
+    </div>
+
+    {# Make a safe dict-like alias so .get() works even if data is missing #}
+{% set d = data | default({}, true) %}
+
+{# Pull from POST -> URL -> DB (both naming styles), then fallback '' #}
+{% set dc = (
+  (request.form.get('delay_category') if request is defined else None)
+  or (request.args.get('delay_category') if request is defined else None)
+  or d.get('delay_category')
+  or d.get('Delay_Category')
+  or ''
+) | trim %}
+
+{% set ds = (
+  (request.form.get('delay_step') if request is defined else None)
+  or (request.args.get('delay_step') if request is defined else None)
+  or d.get('delay_step')
+  or d.get('Delay_Step')
+  or ''
+) | trim %}
+
+{% set res = (
+  (request.form.get('resource') if request is defined else None)
+  or (request.args.get('resource') if request is defined else None)
+  or d.get('resource')
+  or ''
+) | trim %}
+
+{% set da = (
+  (request.form.get('delay_action') if request is defined else None)
+  or (request.args.get('delay_action') if request is defined else None)
+  or d.get('delay_action')
+  or d.get('action_taken')
+  or ''
+) %}
+
+    <!-- I'm checking what delay_category value Jinja is actually seeing -->
+    <!-- debug: delay_category = {{ dc }} -->
+    <label for="delay_category">Delay Category:</label>
+    {% set options = [
+      'EquipmentA (Example)','EquipmentB (Example)','SystemA (Example)','SystemB (Example)',
+      'ProcessA (Example)','ProcessB (Example)','ResourceA (Example)','ResourceB (Example)',
+      'HumanError (Example)','MaintenanceIssue (Example)','SupplyConstraint (Example)',
+      'ExternalFactor (Example)','NetworkIssue (Example)','StorageA (Example)',
+      'StorageB (Example)','TransitionDelay (Example)','CalibrationIssue (Example)',
+      'SafetyCheck (Example)','DataIssue (Example)','UnplannedStop (Example)'
+    ] %}
+    <select id="delay_category" name="delay_category" required>
+      <option value="" {{ 'selected' if not dc }}>Select category</option>
+      {% for opt in options %}
+        <option value="{{ opt }}" {{ 'selected' if (opt|lower) == (dc|lower) else '' }}>{{ opt }}</option>
+      {% endfor %}
+    </select>
+    <br><br>
+
+    <!-- I'm checking what delay_step value Jinja is actually seeing -->
+    <!-- debug: delay_step = {{ ds }} -->
+    <label for="delay_step">Delay Step:</label>
+    <select id="delay_step" name="delay_step" required>
+      <option value="" {{ 'selected' if not ds }}>Select step</option>
+      {% for opt in ['Init','Transfer','Postrinse'] %}
+        <option value="{{ opt }}" {{ 'selected' if (opt|lower) == (ds|lower) else '' }}>{{ opt }}</option>
+      {% endfor %}
+    </select>
+    <br><br>
+
+    <label for="resource">Resource:</label>
+    <select id="resource" name="resource" required>
+      <option value="" {{ 'selected' if not res }}>Select resource</option>
+      {% for opt in ['Centrifuge-1','Centrifuge-2','FilterPress-1','FilterPress-2'] %}
+        <option value="{{ opt }}" {{ 'selected' if (opt|lower) == (res|lower) else '' }}>{{ opt }}</option>
+      {% endfor %}
+    </select>
+    <br><br>
+
+    <label for="equipment_id">Equipment ID:</label>
+    <input type="text" id="equipment_id" name="equipment_id" value="{{ data.equipment_id | default('', true) }}">
+    <br><br>
+
+    <label for="delay_description">Delay Description:</label><br>
+    <textarea id="delay_description" name="delay_description" rows="5" cols="50" required>{{ data.delay_description | default('', true) }}</textarea>
+    <br><br>
+
+    <!-- I'm checking what delay_action value Jinja is actually seeing -->
+<!-- debug: delay_action (da) = {{ da }} -->
+<label for="delay_action">Delay Action:</label><br>
+    <textarea id="delay_action" name="delay_action" rows="5" cols="50" required>{{ da }}</textarea>
+    <br><br>
+
+    <div class="row">
+      <button type="submit">Submit</button>
+    </div>
+
+  </form>
+</body>
+</html>

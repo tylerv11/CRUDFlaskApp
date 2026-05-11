@@ -1,0 +1,12 @@
+env:
+  - name: DATABRICKS_SERVER_HOSTNAME
+    value: "your-warehouse.cloud.databricks.com"
+
+  - name: DATABRICKS_ACCESS_TOKEN
+    value: "enter-your-databricks-token"
+
+  - name: DATABRICKS_HTTP_PATH
+    value: "/sql/1.0/warehouses/YOUR_WAREHOUSE_ID"
+
+
+command: ["python", "app.py"]
